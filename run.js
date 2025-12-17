@@ -2,8 +2,70 @@ const fs = require('fs');
 const xml2js = require('xml2js');
 const { spawn } = require('child_process');
 
-// === CÀI ĐẶT THỜI GIAN HOÀN THÀNH TẠI ĐÂY ===
-const TOTAL_MINUTES = 1;
+// === CÀI ĐẶT THỜI GIAN HOÀN THÀNH MẶC ĐỊNH ===
+// Nếu KHÔNG truyền thêm tham số (npm run start / node run.js)
+//   → sẽ random thời gian trong khoảng 30 ± 5 phút (25–35 phút).
+// Nếu CÓ truyền tham số (ví dụ: node run.js 45)
+//   → sẽ dùng đúng số phút đó (ở đây là 45 phút).
+
+const DEFAULT_MINUTES = 30;
+const BUFFER_MINUTES = 5;
+
+function getTotalMinutesFromArgs() {
+  const arg = process.argv[2];
+
+  // Không truyền tham số → random trong khoảng 30 ± 5 (tính theo GIÂY cho chuẩn)
+  if (!arg) {
+    const base = DEFAULT_MINUTES;
+    const minMinutes = base - BUFFER_MINUTES;
+    const maxMinutes = base + BUFFER_MINUTES;
+
+    const minSeconds = minMinutes * 60;
+    const maxSeconds = maxMinutes * 60;
+    const randomizedSeconds =
+      Math.floor(Math.random() * (maxSeconds - minSeconds + 1)) + minSeconds;
+    const randomizedMinutes = randomizedSeconds / 60;
+
+    console.log(
+      `Không truyền tham số, random thời gian trong khoảng ${base} ± ${BUFFER_MINUTES} phút ` +
+        `(${minMinutes}–${maxMinutes} phút, ${minSeconds}–${maxSeconds} giây). ` +
+        `Kết quả: ~${randomizedMinutes.toFixed(2)} phút (~${randomizedSeconds} giây).`
+    );
+
+    return randomizedMinutes; // trả về phút (có thể có số lẻ)
+  }
+
+  // Có truyền tham số → coi là số phút gốc, cũng random với buffer 5 phút (tính theo GIÂY)
+  const parsed = parseFloat(arg);
+  if (Number.isNaN(parsed) || parsed <= 0) {
+    console.warn(
+      `Tham số thời gian không hợp lệ ("${arg}"). ` +
+      `Sử dụng mặc định ${DEFAULT_MINUTES} phút thay thế.`
+    );
+    return DEFAULT_MINUTES;
+  }
+
+  const base = parsed;
+  const minMinutes = base - BUFFER_MINUTES;
+  const maxMinutes = base + BUFFER_MINUTES;
+
+  const minSeconds = minMinutes * 60;
+  const maxSeconds = maxMinutes * 60;
+  const randomizedSeconds =
+    Math.floor(Math.random() * (maxSeconds - minSeconds + 1)) + minSeconds;
+  const randomizedMinutes = randomizedSeconds / 60;
+
+  console.log(
+    `Tham số đầu vào: ${base} phút, buffer ${BUFFER_MINUTES} phút. ` +
+      `Random trong khoảng ${base} ± ${BUFFER_MINUTES} phút ` +
+      `(${minMinutes}–${maxMinutes} phút, ${minSeconds}–${maxSeconds} giây). ` +
+      `Kết quả: ~${randomizedMinutes.toFixed(2)} phút (~${randomizedSeconds} giây).`
+  );
+
+  return randomizedMinutes;
+}
+
+const TOTAL_MINUTES = getTotalMinutesFromArgs();
 const TOTAL_DURATION_SECONDS = 60 * TOTAL_MINUTES;
 
 // Thay bằng tên file GPX thực tế của bạn
@@ -66,8 +128,11 @@ fs.readFile(gpxFilePath, (err, data) => {
       const lon = parseFloat(point.$.lon);
 
       // Gửi vị trí mới
+      // Gửi cả LF và CRLF để tương thích tốt hơn với Windows / Linux
       gsmProcess.stdin.write(`gps setlatitude ${lat}\n`);
+      gsmProcess.stdin.write(`gps setlatitude ${lat}\r\n`);
       gsmProcess.stdin.write(`gps setlongitude ${lon}\n`);
+      gsmProcess.stdin.write(`gps setlongitude ${lon}\r\n`);
 
       console.log(`Điểm ${index + 1}/${trackpoints.length}: (${lat}, ${lon})`);
 
