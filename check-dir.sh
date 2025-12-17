@@ -1,0 +1,1 @@
+find ~ /opt -name genyshell -o -name gmtool -o -name gsm 2>/dev/null

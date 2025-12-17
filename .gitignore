@@ -1,0 +1,3 @@
+node_modules
+*.gpx
+package-lock.json
