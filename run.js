@@ -40,13 +40,14 @@ fs.readFile(gpxFilePath, (err, data) => {
     console.log(`Delay giữa mỗi điểm: ${delayMs.toFixed(2)} ms (${(delayMs / 1000).toFixed(2)} giây)`);
 
     // Khởi động Genymotion Shell
-    const gsmProcess = spawn('/home/son7122/Genymotion/genymotion/genyshell', [], { stdio: ['pipe', 'pipe', 'pipe'] });
+    const gsmProcess = spawn('/home/son7122/Genymotion/genymotion/genyshell', [], { stdio: ['pipe', 'pipe', 'pipe'], shell: true });
 
     gsmProcess.stdout.on('data', (data) => console.log(`GSM: ${data}`));
     gsmProcess.stderr.on('data', (data) => console.error(`GSM error: ${data}`));
 
     // Bật GPS emulation
     gsmProcess.stdin.write('gps setstatus enabled\n');
+    gsmProcess.stdin.write('gps setstatus enabled\r\n');
 
     let index = 0;
 
